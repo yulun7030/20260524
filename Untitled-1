@@ -1,0 +1,81 @@
+<template>
+  <div class="weather-container">
+    <h2>今日天氣資訊</h2>
+    
+    <!-- 根據載入狀態顯示不同的內容 -->
+    <div v-if="loading">資料載入中，請稍候...</div>
+    
+    <div v-else-if="error" class="error">
+      {{ error }}
+    </div>
+    
+    <div v-else-if="weatherData">
+      <!-- 這裡簡單將取回的 JSON 資料印出來，你可以根據需求去修改 UI -->
+      <pre>{{ weatherData }}</pre>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue';
+
+// 1. 直接將你的氣象局授權碼寫進變數中
+const apiKey = 'CWA-003E76A1-02B5-4C8A-B436-36F7FF1BEB00';
+
+// 建立響應式變數來儲存狀態與資料
+const weatherData = ref(null);
+const loading = ref(true);
+const error = ref(null);
+
+// 2. 定義負責抓取氣象資料的 load 函式
+const load = async () => {
+  try {
+    loading.value = true;
+    error.value = null;
+    
+    // 將 apiKey 帶入氣象局的 API 網址中 (此處以一般天氣預報 F-C0032-001 為例)
+    const apiUrl = `https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=${apiKey}`;
+    
+    const response = await fetch(apiUrl);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // 成功取得資料後存入 weatherData
+    weatherData.value = data;
+    console.log('氣象資料載入成功:', data);
+    
+  } catch (err) {
+    console.error('抓取氣象資料時發生錯誤:', err);
+    error.value = '無法取得氣象資料，請稍後再試。';
+  } finally {
+    // 無論成功或失敗，都將 loading 狀態設為 false
+    loading.value = false;
+  }
+};
+
+// 3. 使用 onMounted，當元件掛載到 DOM 後會自動觸發內部的邏輯
+onMounted(() => {
+  load();
+});
+</script>
+
+<style scoped>
+.weather-container {
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+.error {
+  color: red;
+}
+pre {
+  background-color: #f4f4f4;
+  padding: 15px;
+  border-radius: 5px;
+  overflow-x: auto;
+}
+</style>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>今日天氣資訊</title>
+  <!-- 1. 引入 Vue 3 的全球 CDN 網址，讓瀏覽器可以直接執行 Vue -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    .weather-container {
+      padding: 20px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .error {
+      color: red;
+    }
+    pre {
+      background-color: #f4f4f4;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <!-- Vue 的掛載點 -->
+  <div id="app" class="weather-container">
+    <h2>今日天氣資訊</h2>
+    
+    <div v-if="loading">資料載入中，請稍候...</div>
+    <div v-else-if="error" class="error">{{ error }}</div>
+    <div v-else-if="weatherData">
+      <!-- 顯示抓回來的氣象局資料 -->
+      <pre>{{ weatherData }}</pre>
+    </div>
+  </div>
+
+  <script>
+    // 從全域變數 Vue 中取出需要的功能
+    const { createApp, ref, onMounted } = Vue;
+
+    // 建立 Vue 應用程式
+    createApp({
+      setup() {
+        const apiKey = 'CWA-003E76A1-02B5-4C8A-B436-36F7FF1BEB00';
+        const weatherData = ref(null);
+        const loading = ref(true);
+        const error = ref(null);
+
+        const load = async () => {
+          try {
+            loading.value = true;
+            error.value = null;
+            const apiUrl = `https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=${apiKey}`;
+            const response = await fetch(apiUrl);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json();
+            weatherData.value = data;
+          } catch (err) {
+            error.value = '無法取得氣象資料，請確認網路或 API Key。';
+          } finally {
+            loading.value = false;
+          }
+        };
+
+        // 掛載時執行
+        onMounted(() => {
+          load();
+        });
+
+        // 回傳變數給 HTML 使用
+        return { weatherData, loading, error };
+      }
+    }).mount('#app'); // 綁定到 id 為 app 的 div 上
+  </script>
+</body>
+</html>
