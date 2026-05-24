@@ -16,10 +16,6 @@
       </div>
       <div class="header-right">
         <span class="update-time" v-if="lastUpdate">🕐 {{ lastUpdate }}</span>
-        <button class="key-btn" :class="{ 'has-key': apiKey }"
-          @click="showSettings = !showSettings">
-          {{ apiKey ? '🔑 已設定' : '🔑 設定 API Key' }}
-        </button>
         <button class="refresh-btn" @click="load"
           :disabled="isLoading || !apiKey">
           <span :class="{ spin: isLoading }">🔄</span>
@@ -27,30 +23,6 @@
         </button>
       </div>
     </header>
-
-    <!-- ══ API Key 設定面板 ══ -->
-    <Transition name="slide-down">
-      <div class="settings-panel" v-if="showSettings">
-        <div class="settings-inner">
-          <div class="settings-title">🔑 中央氣象署 API Key 設定</div>
-          <div class="settings-hint">
-            尚未申請？前往
-            <a href="https://opendata.cwa.gov.tw" target="_blank">opendata.cwa.gov.tw</a>
-            免費註冊 → 會員中心 → 取得授權碼（格式：CWA-XXXXXXXX-XXXX-...）
-          </div>
-          <div class="settings-row">
-            <input
-              class="key-input"
-              v-model="apiKey"
-              placeholder="CWA-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
-              @keyup.enter="handleSaveKey"
-            />
-            <button class="save-btn" @click="handleSaveKey">💾 套用並載入</button>
-            <button class="clear-btn" v-if="apiKey" @click="apiKey = ''">清除</button>
-          </div>
-        </div>
-      </div>
-    </Transition>
 
     <!-- ══ 主版面 ══ -->
     <div class="main-layout">
@@ -192,11 +164,6 @@
           <div class="empty" v-if="!isLoading && allQuakes.length === 0 && apiKey">
             😴 目前查無地震資料
           </div>
-          <div class="no-key" v-if="!apiKey">
-            <div>🔑</div>
-            <div>請先填入中央氣象署 API Key</div>
-            <button @click="showSettings = true">前往設定</button>
-          </div>
         </div>
       </aside>
 
@@ -225,7 +192,6 @@ const {
 // ── 本地狀態 ──
 const mapEl       = ref(null)
 const selectedNo  = ref(null)
-const showSettings = ref(false)
 const activeFilter = ref('all')
 
 let map     = null
@@ -367,12 +333,6 @@ function selectQuake(q) {
   markers[q.no]?.openPopup()
 }
 
-// ── 儲存 Key 並載入 ──
-function handleSaveKey() {
-  showSettings.value = false
-  if (apiKey.value.trim()) load()
-}
-
 // ── 監聽資料更新 ──
 watch(allQuakes, () => {
   if (map) renderMarkers()
@@ -380,20 +340,9 @@ watch(allQuakes, () => {
 
 onMounted(() => {
   initMap()
-  // 從 localStorage 讀取上次儲存的 Key
-  const saved = localStorage.getItem('cwa_api_key')
-  if (saved) {
-    apiKey.value = saved
-    load()
-  } else {
-    showSettings.value = true   // 沒有 Key 就自動展開設定
-  }
-})
-
-// 離開前儲存 Key
-watch(apiKey, (val) => {
-  if (val) localStorage.setItem('cwa_api_key', val)
-  else     localStorage.removeItem('cwa_api_key')
+  // 將 API Key 直接寫死在程式碼中，並載入資料
+  apiKey.value = 'CWA-003E76A1-02B5-4C8A-B436-36F7FF1BEB00'
+  load()
 })
 
 onUnmounted(() => {
